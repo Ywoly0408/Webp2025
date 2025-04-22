@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table {
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+            }
+            td, th {
+            border: 1px solid #ddd;
+            padding: 6px;
+            }
+            tr:nth-child(even){background-color: #f2f2f2;}
+            tr:hover {background-color: #ddd;}
+            th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #04AA6D;
+            color: white;
+            }
+    </style>
+    <!-- <script src="script.js"></script> -->
+</head>
+<body>
+    <h1>景點觀光展覽資訊 <input id="searchInput" oninput="SEARCH()"></h1>
+    <table id="csie" class="table table-striped table-hover">
+        <tr>
+            <th>名稱</th>
+            <th>地點</th>
+            <th>票價</th>
+        </tr>
+    </table>
+    <button onclick="pageUp()"> Page Up </button> <span id="pageInfo"></span> <button onclick="pageDown()"> Page Down </button>
+
+</body>
+<script>
+    let dataset = [];
+    let filteredData = [];
+    let currentPage = 0;
+    const rowsPerPage = 10;
+
+    const openUrl = "https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=6";
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', openUrl, true);
+    xhr.send();
+
+    xhr.onreadystatechange = function () {
+        if (this.readyState === 4 && this.status === 200) {
+            dataset = JSON.parse(this.responseText);
+            filteredData = dataset;
+            renderTable();
+        }
+    };
+
+    function SEARCH() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        filteredData = dataset.filter(data => data['title'].toLowerCase().includes(input));
+        currentPage = 0;
+        renderTable();
+    }
+
+    function renderTable() {
+        const myTable = document.getElementById("csie");
+        
+        // Clear old rows
+        while (myTable.rows.length > 1) {
+            myTable.deleteRow(1);
+        }
+
+        const start = currentPage * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = filteredData.slice(start, end);
+
+        pageData.forEach(data => {
+            const row = myTable.insertRow(-1);
+            row.insertCell(0).innerHTML = data['title'];
+            row.insertCell(1).innerHTML = data['showInfo'][0]['location'];
+            row.insertCell(2).innerHTML = data['showInfo'][0]['price'];
+        });
+
+        updatePageInfo();
+    }
+
+    function updatePageInfo() {
+        const pageInfo = document.getElementById("pageInfo");
+        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+        pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+    }
+
+    function pageUp() {
+        if (currentPage > 0) {
+            currentPage--;
+            renderTable();
+        }
+    }
+
+    function pageDown() {
+        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+        if (currentPage < totalPages - 1) {
+            currentPage++;
+            renderTable();
+        }
+    }
+
+    function updatePageInfo() {
+        const pageInfo = document.getElementById("pageInfo");
+        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+        const current = (currentPage + 1).toString().padStart(2, '0');
+        const total = totalPages.toString().padStart(2, '0');
+        pageInfo.textContent = `${current}/${total}`;
+    }
+</script>
+</html>
+
+
+
